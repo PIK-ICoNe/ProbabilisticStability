@@ -1,0 +1,15 @@
+name = "ProbabilisticStability"
+uuid = "bb2e40dd-33ce-4caf-9db6-78280bfd9b11"
+authors = ["Paul Schultz <pschultz@pik-potsdam.de>"]
+version = "0.1.0"
+
+[deps]
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+DynamicalSystems = "61744808-ddfa-5f27-97ff-6e42cc95d634"
+MCBB = "e96e44f0-e827-11e8-0ed4-0f2eba430555"
+QuasiMonteCarlo = "8a4e6c94-4038-4cdc-81c3-7e6ffdb2a71b"
