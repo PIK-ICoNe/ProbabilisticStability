@@ -128,17 +128,12 @@ function basin_stability_fixpoint(
 
     converged = first.(esol.u)
     close = last.(esol.u)
-    success_count = close .& converged |> count #
 
     if verbose
         println(count(close), " initial conditions arrived close to the fixpoint (threshold $threshold) ", count(converged), " indicate convergence.")
     end
 
-    return (
-        binomial_proportion(success_count, sample_size),
-        binomial_ci(success_count, sample_size),
-        success_count
-    )
+    return sample_statistics(close .& converged)
 end
 
 function basin_stability_fixpoint(
@@ -187,15 +182,10 @@ function basin_stability_fixpoint(
     end
 
     close = eval_final_distance_to_state(pint, fixpoint, distance; threshold=threshold)
-    success_count = close  |> count
 
     if verbose
         println(count(close), " initial conditions arrived close to the fixpoint (threshold $threshold).")
     end
 
-    return (
-        binomial_proportion(success_count, sample_size),
-        binomial_ci(success_count, sample_size),
-        success_count
-    )
+    return sample_statistics(close)
 end

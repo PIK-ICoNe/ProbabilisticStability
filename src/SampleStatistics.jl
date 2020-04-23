@@ -140,69 +140,86 @@ function wilson_score(counts, sample_size; α = 0.05)
            z / (1 + z^2 / sample_size)
 end
 
-# define interface
-binomial_proportion(s::Symbol, counts, sample_size; α = 0.05) =
-    binomial_proportion(Val(s), counts, sample_size; α = α)
-binomial_ci(s::Symbol, counts, sample_size; α = 0.05) =
-    binomial_ci(Val(s), counts, sample_size; α = α)
+"""
+    bootstrap_ci(data, statistic, m=50, α=0.05)
 
-# Wilson score
-function binomial_proportion(::Val{:wilson}, counts, sample_size; α = 0.05, verbose=false)
-    if verbose
-        println("Binomial proportion based on the Wilson score formula.")
-    end
-    wilson_score_proportion(counts, sample_size; α = α)
-end
-function binomial_ci(::Val{:wilson}, counts, sample_size; α = 0.05, verbose=false)
-    if verbose
-        println("Confidence interval based on the Wilson score formula.")
-    end
-    wilson_score(counts, sample_size; α = α)
-end
+provides very basic bootstrap sample of `statistic` over an array of `data`.
 
-# Agresti Coull
-binomial_proportion(::Val{:ac}, counts, sample_size; α = 0.05) =
-    wilson_score_proportion(counts, sample_size; α = α)
-binomial_ci(::Val{:ac}, counts, sample_size; α = 0.05) =
-    agresti_coull(counts, sample_size; α = α)
+# Arguments
+- `data`: univariate sample for which a `statistic` should be estimated
+- `statistic`: function that can be applied to `data` and returns a scalar statistic
+- `m`: number of bootstrap resamples
+- `α`: target error rate
 
-# add 2 successes and 2 failures
-binomial_proportion(::Val{:add2}, counts, sample_size; α = 0.05) =
-    add2successes2failures_proportion(counts, sample_size)
-binomial_ci(::Val{:add2}, counts, sample_size; α = 0.05) =
-    add2successes2failures(counts, sample_size; α = α)
+Note that bootstrapping needs some time and computation. Some testing indicates
+that it is roughly two orders of magnitude compared to `binomial_ci`.
 
-# maimum likelihood + Wald interval
-binomial_proportion(::Val{:mle}, counts, sample_size; α = 0.05) =
-    mle_proportion(counts, sample_size)
-binomial_ci(::Val{:wald}, counts, sample_size; α = 0.05) =
-    wald(counts, sample_size; α = α)
-
-# set the defaults
-binomial_proportion(counts, sample_size; α = 0.05) =
-    binomial_proportion(:wilson, counts, sample_size; α = α)
-binomial_ci(counts, sample_size; α = 0.05) =
-    binomial_ci(:wilson, counts, sample_size; α = α)
-
-    """
-        bootstrap_ci(data, statistic, m=50, α=0.05)
-
-    provides very basic bootstrap sample of `statistic` over an array of `data`.
-
-    # Arguments
-    - `data`: univariate sample for which a `statistic` should be estimated
-    - `statistic`: function that can be applied to `data` and returns a scalar statistic
-    - `m`: number of bootstrap resamples
-    - `α`: target error rate
-
-    Note that bootstrapping needs some time and computation. Some testing indicates
-    that it is roughly two orders of magnitude compared to `binomial_ci`.
-
-    """
+"""
 function bootstrap_ci(data, statistic::Function, m=50, α=0.05)
     n = length(data)
-    empirical_dist = return [data[rand(1:n, n)] |> statistic for _ in 1:m]
+    empirical_dist = [data[rand(1:n, n)] |> statistic for _ in 1:m]
     θ = statistic(data)
-    lq, uq = quantile(empirical_dist, [1-α/2, α/2])
-    return (θ, 2θ - lq, 2θ - uq)
+    #lq, uq = quantile(empirical_dist, [1-α/2, α/2])
+    #2θ - lq, 2θ - uq
+    return θ, std(empirical_dist)
 end
+
+# define interface
+sample_statistics(s::Symbol, observations; α = 0.05) = sample_statistics(Val(s), observations; α = α)
+
+
+# Wilson score
+function sample_statistics(::Val{:wilson}, observations; α = 0.05, verbose=false)
+    if verbose
+        println("Binomial confidence interval based on the Wilson score formula.")
+    end
+    counts = count(observations)
+    sample_size = length(observations)
+    return wilson_score_proportion(counts, sample_size; α = α), wilson_score(counts, sample_size; α = α), counts
+end
+
+
+# Agresti Coull
+function sample_statistics(::Val{:ac}, observations; α = 0.05, verbose=false)
+    if verbose
+        println("Agresti&Coull confidence interval.")
+    end
+    counts = count(observations)
+    sample_size = length(observations)
+    return wilson_score_proportion(counts, sample_size; α = α), agresti_coull(counts, sample_size; α = α), counts
+end
+
+
+# add 2 successes and 2 failures
+function sample_statistics(::Val{:add2}, observations; α = 0.05, verbose=false)
+    if verbose
+        println("Binomial confidence interval based by adding 2 successes and 2 failures.")
+    end
+    counts = count(observations)
+    sample_size = length(observations)
+    return add2successes2failures_proportion(counts, sample_size), add2successes2failures(counts, sample_size; α = α), counts
+end
+
+# maximum likelihood + Wald interval
+function sample_statistics(::Val{:mle}, observations; α = 0.05, verbose=false)
+    if verbose
+        println("Binomial confidence interval based by adding 2 successes and 2 failures.")
+    end
+    counts = count(observations)
+    sample_size = length(observations)
+    return mle_proportion(counts, sample_size), wald(counts, sample_size; α = α), counts
+end
+
+# bootstrapping
+function sample_statistics(::Val{:bootstrap}, observations; α = 0.05, verbose=false)
+    if verbose
+        println("Binomial confidence interval based by adding 2 successes and 2 failures.")
+    end
+    counts = count(observations)
+    return bootstrap_ci(observations, mean, 100, α)..., counts
+end
+
+
+# set the defaults
+ sample_statistics(observations; α = 0.05) =
+     sample_statistics(:wilson, observations; α = α)

@@ -19,8 +19,7 @@ using Random
 Random.seed!(42);
 
 using BenchmarkTools
-using Plots
-plotly()
+using UnicodePlots
 
 """
 Here, we want to reproduce step-by-step Fig. 1 from the publication:
