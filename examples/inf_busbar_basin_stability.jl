@@ -1,5 +1,6 @@
 using Pkg
 Pkg.activate(@__DIR__)
+using Revise
 
 using ProbabilisticStability
 
@@ -11,6 +12,8 @@ using Distributions, Clustering
 using Distances
 using QuasiMonteCarlo # to compare different samplings
 using Measurements # nice uncertainty handling
+using NetworkDynamics
+using LightGraphs
 
 using Random
 Random.seed!(42);
@@ -67,34 +70,47 @@ ds = ContinuousDynamicalSystem(ode)
 # 5.752 s (48351905 allocations: 2.00 GiB)
 
 
-μ, μerr, converged = basin_stability_fixpoint(ode, fp, T, lb, ub; verbose=true, distance=PeriodicEuclidean([Inf,2π]), threshold=1.)
-sobol_estimate = μ ± μerr
-
-
-trials = 10
 mle_estimate = []
 uniform_estimate = []
-for _ = 1:trials
+sobol_estimate = []
+Ts = 100:50:1000
+for T in Ts
+    println(T)
     μ, μerr, converged = basin_stability_fixpoint(ode, fp, T, lb, ub; sample_alg=UniformSample(), distance=PeriodicEuclidean([Inf,2π]), threshold=1., verbose=false)
-    push!(mle_estimate, converged / T)
     push!(uniform_estimate, μ ± μerr)
+    push!(mle_estimate, converged / T)
+    μ, μerr, converged = basin_stability_fixpoint(ode, fp, T, lb, ub; verbose=false, distance=PeriodicEuclidean([Inf,2π]), threshold=1.)
+    push!(sobol_estimate, μ ± μerr)
 end
 
 
 
 begin
-    plot(
-        sobol_estimate.val .* ones(trials),
-        ribbon = sobol_estimate.err,
-        label = "Sobol seq.",
+    scatter(Ts,
+        [se for se in sobol_estimate],
+        label = "Sobol sequence",
         legend = :best,
+        #xscale=:log10
     )
-    scatter!(mle_estimate; label = "MLE")
-    scatter!([ue for ue in uniform_estimate], label = "Wilson, uniform dist.")
+    scatter!(Ts, mle_estimate; label = "MLE", marker=:cross)
+    scatter!(Ts, [ue for ue in uniform_estimate], label = "uniform distribution")
     hline!([0.26], label = "Menck et al.")
-    title!("Basin stability estimation, $(T) perturbations, 95% confidence interval")
+    title!("Basin stability estimation, 95% confidence interval")
     ylabel!("basin stability μ")
-    xlabel!("trial")
+    xlabel!("sample size T")
+end
+
+begin
+    scatter(Ts,
+        [se - last(sobol_estimate) for se in sobol_estimate] ./ last(sobol_estimate),
+        label = "Sobol sequence",
+        legend = :best,
+        #xscale=:log10
+    )
+    scatter!(Ts, [ue - last(uniform_estimate) for ue in uniform_estimate] ./ last(uniform_estimate), label = "uniform distribution")
+    title!("Basin stability estimation, 95% confidence interval")
+    ylabel!("relative deviation from best estimate %")
+    xlabel!("sample size T")
 end
 
 ## WIP draw phase space pictures

@@ -183,3 +183,26 @@ binomial_proportion(counts, sample_size; α = 0.05) =
     binomial_proportion(:wilson, counts, sample_size; α = α)
 binomial_ci(counts, sample_size; α = 0.05) =
     binomial_ci(:wilson, counts, sample_size; α = α)
+
+    """
+        bootstrap_ci(data, statistic, m=50, α=0.05)
+
+    provides very basic bootstrap sample of `statistic` over an array of `data`.
+
+    # Arguments
+    - `data`: univariate sample for which a `statistic` should be estimated
+    - `statistic`: function that can be applied to `data` and returns a scalar statistic
+    - `m`: number of bootstrap resamples
+    - `α`: target error rate
+
+    Note that bootstrapping needs some time and computation. Some testing indicates
+    that it is roughly two orders of magnitude compared to `binomial_ci`.
+
+    """
+function bootstrap_ci(data, statistic::Function, m=50, α=0.05)
+    n = length(data)
+    empirical_dist = return [data[rand(1:n, n)] |> statistic for _ in 1:m]
+    θ = statistic(data)
+    lq, uq = quantile(empirical_dist, [1-α/2, α/2])
+    return (θ, 2θ - lq, 2θ - uq)
+end
