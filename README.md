@@ -1,7 +1,7 @@
 # ProbabilisticStability
 An implementation of differnet probabilistic stability measures for deterministic systems.
 
-The aim is to combine features from different Julia packages to implement stability analysis 
+The aim is to combine features from different Julia packages to implement stability analysis
 methods developed in recent papaers, e.g. from PIK.
 
 - NetworkDynamics.jl to represent networked systems efficiently
@@ -17,8 +17,8 @@ The `ProbabilisticStability` package is constituted by four sub-modules.
 ## InitialConditionSets
 
 Provides functions to generate random, low-discrepancy or gridded sets of initial conditions.
-Since in many cases, initial conditions arise from perturbations applied to only a few dimensions, 
-we can think of the perturbations as a small "patch" to the original state. Hence, initial condition 
+Since in many cases, initial conditions arise from perturbations applied to only a few dimensions,
+we can think of the perturbations as a small "patch" to the original state. Hence, initial condition
 sets are stored as ICset types:
 
 ```
@@ -50,20 +50,20 @@ TODO:
 Provides specialised sampling routines for various probabilistic stability measures.
 Implemented so far: basin stability of fixpoints.
 
-The stability evaluation is based on Monte-Carlo sampling, currently implemented 
-via the `EnsembleProblem`of DifferentialEquations.jl. In the future, this task should 
-integrate MCBB, especially when parameters are varied. 
+The stability evaluation is based on Monte-Carlo sampling, currently implemented
+via the `EnsembleProblem`of DifferentialEquations.jl. In the future, this task should
+integrate MCBB, especially when parameters are varied.
 
 An alternative Implementation is available that uses the perallel integrator provided by
 DynamicalSystems.jl. For a small system, all initial conditions are integrated at once.
 Though it might be more performant than ensemble simulations in theory, first test indicate
-that the parallel approach is an order of magnitude slower, probably because it cannot make 
+that the parallel approach is significantly slower, probably because it cannot make 
 use of adaptive step sizing.
 
 TODO:
 
 - add survivability, FTBS, n-node basin stability, stochastic basin stability, ...
-- add parameter-varying analyses to study bifurcations 
+- add parameter-varying analyses to study bifurcations
 - extend MCBB integration
     - how to set up a MCBB problem with fixed parameter
     - need function that returns the __count__ of a condition per cluster per sliding window
@@ -82,5 +82,3 @@ initial conditions.
 TODO:
 
 - use the __whole__ trajectories to plot basins.
-
-

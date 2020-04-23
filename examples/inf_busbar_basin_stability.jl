@@ -20,7 +20,7 @@ using Plots
 plotly()
 
 """
-Here, we want to reproduce Fig. 1 from the publication:
+Here, we want to reproduce step-by-step Fig. 1 from the publication:
 
 Menck,P & Kurths, J.
 Topological Identification of Weak Points in Power Grids.
@@ -44,22 +44,30 @@ end
 
 
 
-## compare MonteCarlo and QuasiMonteCarlo sampling
+## compare MonteCarlo and QuasiMonteCarlo sampling, parallel_integrator and EnsembleProblem
 
 T = 500
 
 p = SwingPars(1.0, 0.1, 8.0, 0.0)
-fp = [0.0, asin(p.P / p.K)]
+fp = [0.0, asin(p.P / p.K)] # we know the stable fixpoint
+
+# define sampling region
 lb = [-100.0, -π]
 ub = -lb
 
 ode = ODEProblem(swing!, fp,  (0., 200.), p)
 
 # for small systems, it could be more performant to stack them up?
-#ds = ContinuousDynamicalSystem(ode)
-#μ, μerr, converged = basin_stability_fixpoint(ds, fp, T, lb, ub; verbose=true, distance=PeriodicEuclidean([Inf,2π]), threshold=1.)
+ds = ContinuousDynamicalSystem(ode)
+@btime basin_stability_fixpoint(ds, fp, T, lb, ub; verbose=false, distance=PeriodicEuclidean([Inf,2π]), threshold=1.)
+# 16.589 s (91124105 allocations: 3.50 GiB)
+
 # EnsembleProblem version
-μ, μerr, converged = basin_stability_fixpoint(ode, fp, T, lb, ub; verbose=false, distance=PeriodicEuclidean([Inf,2π]), threshold=1.)
+@btime basin_stability_fixpoint(ode, fp, T, lb, ub; verbose=false, distance=PeriodicEuclidean([Inf,2π]), threshold=1.)
+# 5.752 s (48351905 allocations: 2.00 GiB)
+
+
+μ, μerr, converged = basin_stability_fixpoint(ode, fp, T, lb, ub; verbose=true, distance=PeriodicEuclidean([Inf,2π]), threshold=1.)
 sobol_estimate = μ ± μerr
 
 
@@ -82,14 +90,14 @@ begin
         legend = :best,
     )
     scatter!(mle_estimate; label = "MLE")
-    scatter!([ue for ue in uniform_estimate], label = "uniform dist.")
+    scatter!([ue for ue in uniform_estimate], label = "Wilson, uniform dist.")
     hline!([0.26], label = "Menck et al.")
     title!("Basin stability estimation, $(T) perturbations, 95% confidence interval")
     ylabel!("basin stability μ")
     xlabel!("trial")
 end
 
-## draw phase space pictures
+## WIP draw phase space pictures
 
 T = 5000
 fp = [asin(p.P / p.K), 0.0]
@@ -139,7 +147,10 @@ end
 color_code = map(x -> x ? "green" : "red", converged)
 scatter(θ0, ω0, mc = color_code)
 
-## draw bifurcation diagramme
+
+
+
+## Idea collection
 
 fp = [0.0, asin(p.P / p.K)]
 

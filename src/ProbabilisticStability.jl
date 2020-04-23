@@ -12,7 +12,7 @@ export perturbation_set,
     perturbation_set_uniform, perturbation_set_sobol, perturbation_set_grid
 
 using Distributions: mean
-using Distances: euclidean, Euclidean, PeriodicEuclidean, colwise
+using Distances: euclidean, Euclidean, PeriodicEuclidean, colwise, evaluate
 using OrdinaryDiffEq: ODESolution
 include(folder * "/Observables.jl")
 export get_max_distance_to_state,
