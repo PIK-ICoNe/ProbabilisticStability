@@ -45,6 +45,7 @@ end
 
 
 
+# ODEProblem
 function basin_stability_fixpoint(
     ode_prob::ODEProblem,
     fixpoint,
@@ -59,7 +60,6 @@ function basin_stability_fixpoint(
     sample_alg = nothing,
     verbose = false,
 )
-    #TODO: pass solve args through
 
     if verbose
         println("Parallel ensemble simulation")
@@ -69,6 +69,44 @@ function basin_stability_fixpoint(
         ics = perturbation_set_sobol(fixpoint, dimensions, sample_size, lb, ub; verbose=verbose)
     else
         ics = perturbation_set(fixpoint, dimensions, sample_size, lb, ub, sample_alg, verbose)
+    end
+
+    #TODO: pass solve args through
+    basin_stability_MCsample(
+        ode_prob,
+        fixpoint,
+        sample_size,
+        ics;
+        distance=distance,
+        threshold=threshold,
+        parallel_alg = parallel_alg,
+        solver = solver,
+        verbose = verbose,
+        )
+
+    if verbose
+        println(count(close), " initial conditions arrived close to the fixpoint (threshold $threshold) ", count(converged), " indicate convergence.")
+    end
+
+    return sample_statistics(close .& converged)
+end
+
+# ODEProblem, custom ICset
+function basin_stability_MCsample(
+    ode_prob::ODEProblem,
+    fixpoint,
+    sample_size,
+    ics::Union{ICset, Array};
+    distance=Euclidean(),
+    threshold=1E-4,
+    parallel_alg = nothing,
+    solver = nothing,
+    verbose = false,
+)
+    #TODO: pass solve args through
+
+    if verbose
+        println("Parallel ensemble simulation")
     end
 
     option_s = isnothing(solver) ? Tsit5() : solver
@@ -129,13 +167,10 @@ function basin_stability_fixpoint(
     converged = first.(esol.u)
     close = last.(esol.u)
 
-    if verbose
-        println(count(close), " initial conditions arrived close to the fixpoint (threshold $threshold) ", count(converged), " indicate convergence.")
-    end
-
-    return sample_statistics(close .& converged)
+    return close, converged
 end
 
+# DynamicalSystem
 function basin_stability_fixpoint(
     ds::DynamicalSystem,
     fixpoint,

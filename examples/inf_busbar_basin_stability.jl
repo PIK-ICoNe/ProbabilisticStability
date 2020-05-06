@@ -1,6 +1,5 @@
 using Pkg
 Pkg.activate(@__DIR__)
-using Revise
 
 using ProbabilisticStability
 
@@ -19,7 +18,9 @@ using Random
 Random.seed!(42);
 
 using BenchmarkTools
-using UnicodePlots
+using Plots
+plotly()
+
 
 """
 Here, we want to reproduce step-by-step Fig. 1 from the publication:
@@ -43,6 +44,7 @@ function swing!(du, u, p, t)
     @. du[ωs] = p.P - p.α * u[ωs] - p.K .* sin.(u[θs] - p.θgrid)
     @. du[θs] = u[ωs]
 end
+
 
 
 
