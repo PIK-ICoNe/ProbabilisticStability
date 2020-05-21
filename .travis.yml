@@ -11,4 +11,4 @@ notifications:
 env:
    - PYTHON=""
 after_success:
-- julia --check-bounds=yes --color=yes --inline=no -e "using Pkg; Pkg.test(coverage=true)" && julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; res=Codecov.process_folder(); Codecov.submit(res);'
+- julia --check-bounds=yes --color=yes --inline=no -e 'using Pkg; Pkg.add(PackageSpec(url="git@github.com:maximilian-gelbrecht/MCBB.jl.git")); Pkg.test(coverage=true)' && julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; res=Codecov.process_folder(); Codecov.submit(res);'
