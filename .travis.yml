@@ -1,0 +1,14 @@
+language: julia
+os:
+  - linux
+julia:
+  - 1.4
+matrix:
+  allow_failures:
+    - julia: nightly
+notifications:
+  email: false
+env:
+   - PYTHON=""
+after_success:
+- julia --check-bounds=yes --color=yes --inline=no -e "using Pkg; Pkg.test(coverage=true)" && julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; res=Codecov.process_folder(); Codecov.submit(res);'
