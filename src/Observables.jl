@@ -1,4 +1,4 @@
-function get_convergence_to_state(sol::ODESolution, state, distance; tail_frac=0.8)
+function get_convergence_to_state(sol::AbstractODESolution, state, distance; tail_frac=0.8)
     L = length(sol.t)
     idx = max(1, round(Int, tail_frac*L)):L
     x = sol.t[idx]
@@ -10,7 +10,7 @@ function get_convergence_to_state(sol::ODESolution, state, distance; tail_frac=0
     return slope
 end
 
-function eval_convergence_to_state(sol::ODESolution, state, distance; tail_frac=0.8, verbose=false)
+function eval_convergence_to_state(sol::AbstractODESolution, state, distance; tail_frac=0.8, verbose=false)
     slope = get_convergence_to_state(sol, state, distance; tail_frac=tail_frac)
     if verbose
         println("The estimated slope is $slope.")
@@ -18,7 +18,7 @@ function eval_convergence_to_state(sol::ODESolution, state, distance; tail_frac=
     return slope < 0
 end
 
-function eval_final_distance_to_state(sol::ODESolution, state, distance; threshold=1E-3, verbose=true)
+function eval_final_distance_to_state(sol::AbstractODESolution, state, distance; threshold=1E-3, verbose=true)
     d = evaluate(distance, state, sol[end])
     if verbose
         println("The final state distance is $d.")
@@ -50,13 +50,13 @@ end
 #     return dmax < threshold
 # end
 
-function get_mean_distance_to_state(sol::ODESolution, state, distance; tail_frac=0.8)
+function get_mean_distance_to_state(sol::AbstractODESolution, state, distance; tail_frac=0.8)
     L = length(sol.t)
     idx = max(1, round(Int, tail_frac*L)):L
     return mean([distance(state, p) for p in sol.u[idx]])
 end
 
-function eval_mean_distance_to_state(sol::ODESolution, state, distance; threshold=1E-3, tail_frac=0.8, verbose=true)
+function eval_mean_distance_to_state(sol::AbstractODESolution, state, distance; threshold=1E-3, tail_frac=0.8, verbose=true)
     d = get_mean_distance_to_state(sol, state, distance; tail_frac=tail_frac)
     if verbose
         println("The mean state distance is $d.")
@@ -66,13 +66,13 @@ end
 
 eval_mean_distance_to_state(d; threshold=1E-3) = d < threshold
 
-function get_max_distances_to_state(sol::ODESolution, state, distance; tail_frac=0.8)
+function get_max_distances_to_state(sol::AbstractODESolution, state, distance; tail_frac=0.8)
     L = length(sol.t)
     idx = max(1, round(Int, tail_frac*L)):L
     return maximum(distance.(fp, sol), dims=2)
 end
 
-function eval_max_distances_to_state(sol::ODESolution, state, lb, ub, distance; tail_frac=0.8, verbose=true)
+function eval_max_distances_to_state(sol::AbstractODESolution, state, lb, ub, distance; tail_frac=0.8, verbose=true)
     d = get_max_distances_to_state(sol, state, distance; tail_frac=tail_frac)
     if verbose
         println("The max state distances are $d.")
@@ -82,7 +82,7 @@ end
 
 eval_max_distances_to_state(d, lb, ub) =  lb .< d .< ub
 
-function eval_max_distance_to_state(sol::ODESolution, state, lb, ub, distance; tail_frac=0.8, verbose=true)
+function eval_max_distance_to_state(sol::AbstractODESolution, state, lb, ub, distance; tail_frac=0.8, verbose=true)
     d = get_max_distances_to_state(sol, state, distance; tail_frac=tail_frac)
     if verbose
         println("The max state distance is $d.")
@@ -92,13 +92,13 @@ end
 
 eval_max_distance_to_state(d, lb, ub) =  all(lb .< d .< ub)
 
-function get_trajectory_within_bounds(sol::ODESolution, lb, ub; tail_frac=0, verbose=true)
+function get_trajectory_within_bounds(sol::AbstractODESolution, lb, ub; tail_frac=0, verbose=true)
     L = length(sol.t)
     idx = max(1, round(Int, tail_frac*L)):L
     return [all(lb .< p .< ub) for p in sol.u[idx]]
 end
 
-function eval_trajectory_within_bounds(sol::ODESolution, lb, ub; tail_frac=0, verbose=true)
+function eval_trajectory_within_bounds(sol::AbstractODESolution, lb, ub; tail_frac=0, verbose=true)
     # use Inf as bounds for dimension that should be beglected
     ep = get_trajectory_within_bounds(sol, lb, ub; tail_frac=tail_frac, verbose=verbose)
     #findlast(.! ep)

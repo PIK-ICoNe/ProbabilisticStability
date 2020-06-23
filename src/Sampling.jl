@@ -61,10 +61,6 @@ function basin_stability_fixpoint(
     verbose = false,
 )
 
-    if verbose
-        println("Parallel ensemble simulation")
-    end
-
     if isnothing(sample_alg)
         ics = perturbation_set_sobol(fixpoint, dimensions, sample_size, lb, ub; verbose=verbose)
     else
@@ -72,7 +68,7 @@ function basin_stability_fixpoint(
     end
 
     #TODO: pass solve args through
-    basin_stability_MCsample(
+    close, converged = basin_stability_MCsample(
         ode_prob,
         fixpoint,
         sample_size,
@@ -88,7 +84,7 @@ function basin_stability_fixpoint(
         println(count(close), " initial conditions arrived close to the fixpoint (threshold $threshold) ", count(converged), " indicate convergence.")
     end
 
-    return sample_statistics(close .& converged)
+    return sample_statistics(close)
 end
 
 # ODEProblem, custom ICset
@@ -109,9 +105,9 @@ function basin_stability_MCsample(
         println("Parallel ensemble simulation")
     end
 
-    option_s = isnothing(solver) ? Tsit5() : solver
+    option_s = isnothing(solver) ? AutoTsit5(Rosenbrock23()) : solver
     option_p = isnothing(parallel_alg) ?
-        (nprocs() > 1 ? EnsembleDistributed() : EnsembleThreads()) :
+        (nprocs() > 1 ? EnsembleThreads() : EnsembleSerial()) :
         parallel_alg
 
     #(prob,i,repeat)->(prob)
@@ -158,7 +154,6 @@ function basin_stability_MCsample(
             option_s,
             option_p,
             #saveat = 0.1,
-            progress = true,
             trajectories = sample_size,
             callback = TerminateSteadyState(1E-8, 1E-6), # 1E-8, 1E-6
         )

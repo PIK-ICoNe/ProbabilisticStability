@@ -110,7 +110,7 @@ function perturbation_set_grid(
     ub;
     verbose = false,
 )
-    @assert length(lb) == length(ub) == nodal_dim
+    @assert length(lb) == length(ub)
 
     if lb isa Number
         dx = (ub - lb) / sample_size
@@ -126,6 +126,39 @@ function perturbation_set_grid(
 
     if verbose
         println("Regular grid of initial conditions.")
+    end
+
+    return perturbations
+end
+
+
+"""
+this functions creates a 2D rectangle, ideal for phase space plots
+
+# Arguments
+- `lb`: list of lower sampling bounds
+- `ub`: list of upper sampling bounds
+"""
+function perturbation_set_rect(
+    state,
+    idxs,
+    sample_size,
+    lb,
+    ub;
+    verbose = false,
+)
+    @assert length(lb) == length(ub) == length(idxs) == 2
+
+    xrange = range(lb[1], ub[1], length=ceil(Int, sqrt(sample_size)))
+    yrange = range(lb[2], ub[2], length=ceil(Int, sqrt(sample_size)))
+
+    perturbations = [state[idxs] .+ [x, lb[2]] for x in xrange] # bottom
+    append!(perturbations, [state[idxs] .+ [x, ub[2]] for x in xrange]) # top
+    append!(perturbations, [state[idxs] .+ [lb[1], y] for y in yrange]) # left
+    append!(perturbations, [state[idxs] .+ [ub[1], y] for y in yrange]) # right
+
+    if verbose
+        println("Rectangle of initial conditions.")
     end
 
     return perturbations

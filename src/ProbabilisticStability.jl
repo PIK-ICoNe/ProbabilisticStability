@@ -9,11 +9,11 @@ export binomial_proportion, binomial_ci
 using QuasiMonteCarlo
 include(folder * "/InitialConditionSets.jl")
 export perturbation_set,
-    perturbation_set_uniform, perturbation_set_sobol, perturbation_set_grid
+    perturbation_set_uniform, perturbation_set_sobol, perturbation_set_grid, perturbation_set_rect
 
 using Distributions: mean
 using Distances: euclidean, Euclidean, PeriodicEuclidean, colwise, evaluate
-using OrdinaryDiffEq: ODESolution
+using DiffEqBase: AbstractODESolution
 include(folder * "/Observables.jl")
 export get_max_distance_to_state,
     get_max_distances_to_state,
@@ -34,10 +34,12 @@ using DiffEqCallbacks: TerminateSteadyState
 using OrdinaryDiffEq:
     EnsembleProblem,
     ODEProblem,
-    Tsit5,
+    AutoTsit5,
+    Rosenbrock23,
+    Rodas4,
     solve,
     EnsembleThreads,
-    EnsembleDistributed,
+    EnsembleSerial,
     remake
 using Distributed: nprocs
 include(folder * "/Sampling.jl")
