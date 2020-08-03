@@ -44,5 +44,9 @@ using OrdinaryDiffEq:
 using Distributed: nprocs
 include(folder * "/Sampling.jl")
 export basin_stability_fixpoint
+export survivability
+
+include(folder * "/Plots.jl")
+export basin_plot
 
 end #module

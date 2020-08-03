@@ -1,105 +1,21 @@
-using Pkg
-Pkg.activate(".")
 
-function return_trajectories(sol, i) #output_func
+function return_trajectories(sol, i) # output_func
     (sol, false)
 end
 
-function all_evals(sol, i) #output_func
-    a = eval_convergence_to_state(sol, fp, euclidean; verbose = false)
-    b = eval_final_distance_to_state(sol, fp, euclidean; verbose = false)
-    c = eval_trajectory_within_bounds(
-        sol,
-        [-2.0, -Inf],
-        [2.0, Inf];
-        verbose = false,
-    )
-    ([a; b; c], false)
-end
-
-# basin_stability_fixpoint(
-#     f, u0, tspan, p,
-#     fixpoint,
-#     sample_size,
-#     lb,
-#     ub;
-#     dimensions=:,
-#     threshold=1E-4,
-#     parallel_alg = nothing,
-#     solver = nothing,
-#     sample_alg = nothing,
-#     verbose = false,
-# ) = basin_stability_fixpoint(
-#     ODEProblem(f, u0, tspan, p),
-#     fixpoint,
-#     sample_size,
-#     lb,
-#     ub;
-#     dimensions=dimensions,
-#     threshold=threshold,
-#     parallel_alg = nothing,
-#     solver = nothing,
-#     sample_alg = nothing,
-#     verbose = verbose,
-# )
-
-
-
-# ODEProblem
-function basin_stability_fixpoint(
-    ode_prob::ODEProblem,
-    fixpoint,
-    sample_size,
-    lb,
-    ub;
-    dimensions=:,
-    distance=Euclidean(),
-    threshold=1E-4,
-    parallel_alg = nothing,
-    solver = nothing,
-    sample_alg = nothing,
-    verbose = false,
-)
-
-    if isnothing(sample_alg)
-        ics = perturbation_set_sobol(fixpoint, dimensions, sample_size, lb, ub; verbose=verbose)
-    else
-        ics = perturbation_set(fixpoint, dimensions, sample_size, lb, ub, sample_alg, verbose)
-    end
-
-    #TODO: pass solve args through
-    close, converged = basin_stability_MCsample(
-        ode_prob,
-        fixpoint,
-        sample_size,
-        ics;
-        distance=distance,
-        threshold=threshold,
-        parallel_alg = parallel_alg,
-        solver = solver,
-        verbose = verbose,
-        )
-
-    if verbose
-        println(count(close), " initial conditions arrived close to the fixpoint (threshold $threshold) ", count(converged), " indicate convergence.")
-    end
-
-    return sample_statistics(close)
-end
-
 # ODEProblem, custom ICset
-function basin_stability_MCsample(
+function mc_sample_from_IC(
     ode_prob::ODEProblem,
-    fixpoint,
-    sample_size,
-    ics::Union{ICset, Array};
-    distance=Euclidean(),
-    threshold=1E-4,
+    eval_func::Function,
+    sample_size::Int,
+    ics::Union{ICset,Array};
+    distance = Euclidean(),
+    threshold = 1E-4,
     parallel_alg = nothing,
     solver = nothing,
     verbose = false,
 )
-    #TODO: pass solve args through
+    # TODO: pass solve args through
 
     if verbose
         println("Parallel ensemble simulation")
@@ -110,11 +26,66 @@ function basin_stability_MCsample(
         (nprocs() > 1 ? EnsembleThreads() : EnsembleSerial()) :
         parallel_alg
 
-    #(prob,i,repeat)->(prob)
+    # (prob,i,repeat)->(prob)
     prob_func(prob, i, repeat) = remake(prob, u0 = ics[:, i])
 
-    #(sol,i) -> (sol,false)
-    function all_evals(sol, i) #output_func
+    eprob = EnsembleProblem(
+        ode_prob;
+        output_func = eval_func, # (sol,i) -> (sol,false),
+        prob_func = prob_func, # (prob,i,repeat)->(prob),
+        # reduction = (u,data,I)->(append!(u,data),false),
+        u_init = [],
+    )
+
+    if verbose
+        @time esol = solve(
+            eprob,
+            option_s,
+            option_p,
+            # saveat = 0.1,
+            trajectories = sample_size,
+            callback = TerminateSteadyState(1E-8, 1E-6), #
+        )
+    else
+        esol = solve(
+            eprob,
+            option_s,
+            option_p,
+            # saveat = 0.1,
+            trajectories = sample_size,
+            callback = TerminateSteadyState(1E-8, 1E-6), # 1E-8, 1E-6
+        )
+    end
+
+    return esol.u
+end
+
+
+
+# ODEProblem
+function basin_stability_fixpoint(
+    ode_prob::ODEProblem,
+    fixpoint,
+    sample_size,
+    lb,
+    ub;
+    dimensions = :,
+    distance = Euclidean(),
+    threshold = 1E-4,
+    parallel_alg = nothing,
+    solver = nothing,
+    sample_alg = nothing,
+    verbose = false,
+)
+
+    if isnothing(sample_alg)
+        ics = perturbation_set_sobol(fixpoint, dimensions, sample_size, lb, ub; verbose = verbose)
+    else
+        ics = perturbation_set(fixpoint, dimensions, sample_size, lb, ub, sample_alg, verbose)
+    end
+
+    # (sol,i) -> (sol,false)
+    function eval_func(sol, i) # output_func
         co = eval_convergence_to_state(
             sol,
             fixpoint,
@@ -131,38 +102,27 @@ function basin_stability_MCsample(
         ([co; di], false)
     end
 
-    eprob = EnsembleProblem(
-        ode_prob;
-        output_func = all_evals, #(sol,i) -> (sol,false),
-        prob_func = prob_func, #(prob,i,repeat)->(prob),
-        #reduction = (u,data,I)->(append!(u,data),false),
-        u_init = [],
-    )
+    # TODO: pass solve args through
+    esol = mc_sample_from_IC(
+        ode_prob,
+        eval_func,
+        sample_size,
+        ics;
+        distance = distance,
+        threshold = threshold,
+        parallel_alg = parallel_alg,
+        solver = solver,
+        verbose = verbose,
+        )
+
+    converged = first.(esol)
+    close = last.(esol)
 
     if verbose
-        @time esol = solve(
-            eprob,
-            option_s,
-            option_p,
-            #saveat = 0.1,
-            trajectories = sample_size,
-            callback = TerminateSteadyState(1E-8, 1E-6), #
-        )
-    else
-        esol = solve(
-            eprob,
-            option_s,
-            option_p,
-            #saveat = 0.1,
-            trajectories = sample_size,
-            callback = TerminateSteadyState(1E-8, 1E-6), # 1E-8, 1E-6
-        )
+        println(count(close), " initial conditions arrived close to the fixpoint (threshold $threshold) ", count(converged), " indicate convergence.")
     end
 
-    converged = first.(esol.u)
-    close = last.(esol.u)
-
-    return close, converged
+    return sample_statistics(close)
 end
 
 # DynamicalSystem
@@ -172,22 +132,22 @@ function basin_stability_fixpoint(
     sample_size,
     lb,
     ub;
-    dimensions=:,
-    distance=Euclidean(),
-    threshold=1E-4,
-    Tend=100,
+    dimensions = :,
+    distance = Euclidean(),
+    threshold = 1E-4,
+    Tend = 100,
     solver = nothing,
     sample_alg = nothing,
     verbose = false,
 )
-    #TODO: pass solve args through
+    # TODO: pass solve args through
 
     if verbose
         println("Parallel integrator simulation")
     end
 
     if isnothing(sample_alg)
-        ics = perturbation_set_sobol(fixpoint, dimensions, sample_size, lb, ub; verbose=verbose)
+        ics = perturbation_set_sobol(fixpoint, dimensions, sample_size, lb, ub; verbose = verbose)
     else
         ics = perturbation_set(fixpoint, dimensions, sample_size, lb, ub, sample_alg, verbose)
     end
@@ -211,7 +171,7 @@ function basin_stability_fixpoint(
         end
     end
 
-    close = eval_final_distance_to_state(pint, fixpoint, distance; threshold=threshold)
+    close = eval_final_distance_to_state(pint, fixpoint, distance; threshold = threshold)
 
     if verbose
         println(count(close), " initial conditions arrived close to the fixpoint (threshold $threshold).")
@@ -219,3 +179,56 @@ function basin_stability_fixpoint(
 
     return sample_statistics(close)
 end
+
+
+## ODEProblem
+function survivability(
+    ode_prob::ODEProblem,
+    indicator_func::Function, # an indicator function with signature p -> bool for a point p
+    sample_size::Int,
+    lb,
+    ub;
+    dimensions = :,
+    parallel_alg = nothing,
+    solver = nothing,
+    sample_alg = nothing,
+    verbose = false,
+)
+
+    if isnothing(sample_alg)
+        # sample around origin since we don't need a fixpoint here
+        ics = perturbation_set_sobol(zero(ode.u0), dimensions, sample_size, lb, ub; verbose = verbose)
+    else
+        ics = perturbation_set(zero(ode.u0), dimensions, sample_size, lb, ub, sample_alg, verbose)
+    end
+
+    function eval_func(sol, i) # output_func
+        inside_set = [indicator_func(p) for p in sol.u] # use interpolation?
+        surv = all(inside_set) # total survival
+        finite_surv = findlast(cumprod(inside_set)) # finite time survival
+        ([surv; isnothing(finite_surv) ? nothing : sol.t[finite_surv]], false)
+    end
+
+    # TODO: pass solve args through
+    esol = mc_sample_from_IC(
+        ode_prob,
+        eval_func,
+        sample_size,
+        ics;
+        distance = distance,
+        threshold = threshold,
+        parallel_alg = parallel_alg,
+        solver = solver,
+        verbose = verbose,
+        )
+
+    surv = first.(esol)
+    finite_surv = last.(esol)
+
+    if verbose
+        println(count(surv), " initial conditions survived.")
+    end
+
+    return sample_statistics(surv)
+end
+

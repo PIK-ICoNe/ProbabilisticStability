@@ -1,6 +1,8 @@
 #using Distributed
 #addprocs(2)
 
+##
+
 begin
     using Pkg
     Pkg.activate(@__DIR__)
@@ -8,17 +10,17 @@ begin
     using ProbabilisticStability
 
     using OrdinaryDiffEq
-    using DiffEqCallbacks
-    using DynamicalSystems
+    #using DiffEqCallbacks
+    #using DynamicalSystems
     using MCBB
-    using Distributions, Clustering
+    #using Distributions, Clustering
     using Distances
     using QuasiMonteCarlo # to compare different samplings
     using Measurements # nice uncertainty handling
     using NetworkDynamics
     using LightGraphs
-    using NLsolve
-    using StatsBase
+    #using NLsolve
+    #using StatsBase
     using DataFrames
 
     using Random
@@ -31,7 +33,7 @@ begin
     using LaTeXStrings
 end
 
-
+##
 
 """
 Here, we want to reproduce step-by-step Fig. 1 from the publication:
@@ -41,7 +43,7 @@ Topological Identification of Weak Points in Power Grids.
 Nonlinear Dynamics of Electronic Systems, 144-147, 2012
 """
 
-struct SwingPars #<: DEParameters
+struct SwingPars <: DEParameters
     P
     α
     K
@@ -87,6 +89,8 @@ fp = [0.0, asin(p.P / p.K)]
 #     #plot!(sol.t, ode.u0[1] .* exp.(-sol.t * p.α))
 #     vline!([- log(t / ode.u0[1]) / p.α, min(1000, 10*log(10)/p.α)])
 
+
+##
 
 @time for α in αs
     println(α)
@@ -320,6 +324,7 @@ for _ in 1:num_grids
         end
 
     _df = DataFrame(
+        p = P,
         d = degree(g),
         nd = [degree(g, neighbors(g, v)) |> mean |> round for v in vertices(g)], # binning to integers
         bw = betweenness_centrality(g, normalize=false) .|> round ,# binning to integers
@@ -343,10 +348,10 @@ gd = combine(groupby(df[df.d .== 1,:], :nd), :bs => mean) |> sort
     plot!(gd.nd, gd.bs_mean, label="d=2")
 
 # Fig 3b
-gd = combine(groupby(df[df.d .== 3,:], :nd), :bs => mean)
-    scatter(gd.nd, gd.bs_mean, xlabel="average neighbour degree d^N", ylabel="expected basin stability E (S | d, d^N)", label="d=3")
-    gd = combine(groupby(df[df.d .== 4,:], :nd), :bs => mean)
-    scatter!(gd.nd, gd.bs_mean, label="d=4")
+gd = combine(groupby(df[df.d .== 3,:], :nd), :bs => mean) |> sort
+    plot(gd.nd, gd.bs_mean, xlabel="average neighbour degree d^N", ylabel="expected basin stability E (S | d, d^N)", label="d=3")
+    gd = combine(groupby(df[df.d .== 4,:], :nd), :bs => mean) |> sort
+    plot!(gd.nd, gd.bs_mean, label="d=4")
 
 # Fig 4a
 gd = combine(groupby(df, :bw), :bs => mean) |> sort

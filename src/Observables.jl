@@ -106,3 +106,15 @@ function eval_trajectory_within_bounds(sol::AbstractODESolution, lb, ub; tail_fr
 end
 
 eval_trajectory_within_bounds(twb::Array{Bool,1}) = all(twb)
+
+function all_evals(sol, i) # output_func
+    a = eval_convergence_to_state(sol, fp, euclidean; verbose = false)
+    b = eval_final_distance_to_state(sol, fp, euclidean; verbose = false)
+    c = eval_trajectory_within_bounds(
+        sol,
+        [-2.0, -Inf],
+        [2.0, Inf];
+        verbose = false,
+    )
+    ([a; b; c], false)
+end
