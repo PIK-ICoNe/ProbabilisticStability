@@ -21,29 +21,29 @@ function perturbation_set(
     return ICset(state, perturbations, idxs)
 end
 
-function perturbation_set(
-    state,
-    idxs::Colon,
-    sample_size,
-    lb,
-    ub,
-    alg::QuasiMonteCarlo.SamplingAlgorithm,
-    verbose,
-)
-    @assert length(lb) == length(ub) == length(state)
-    # output format (d, n)
-    perturbations = QuasiMonteCarlo.sample(sample_size, lb, ub, alg)
-    if verbose
-        println("Sampling initial conditions based on $alg.")
-    end
-    return state .+ perturbations
-end
+# function perturbation_set(
+#     state,
+#     idxs::Colon,
+#     sample_size,
+#     lb,
+#     ub,
+#     alg::QuasiMonteCarlo.SamplingAlgorithm,
+#     verbose,
+# )
+#     @assert length(lb) == length(ub) == length(state)
+#     # output format (d, n)
+#     perturbations = QuasiMonteCarlo.sample(sample_size, lb, ub, alg)
+#     if verbose
+#         println("Sampling initial conditions based on $alg.")
+#     end
+#     return state .+ perturbations
+# end
 
-struct ICset{T}
-    state::Array{T}
-    perturbations::Array{T}
-    idxs
-    outdim
+struct ICset #{T, N}
+    state#::Array{T, 1}
+    perturbations#::Array{T, N}
+    idxs#::Union{UnitRange, AbstractArray}
+    outdim#::Tuple
 end
 
 ICset(state, perturbations, idxs) = ICset(
@@ -52,6 +52,7 @@ ICset(state, perturbations, idxs) = ICset(
     idxs,
     (length(state), last(size(perturbations))),
 )
+
 
 Base.size(ics::ICset) = ics.outdim
 Base.length(ics::ICset) = prod(size(ics))
@@ -152,14 +153,22 @@ function perturbation_set_rect(
     xrange = range(lb[1], ub[1], length=ceil(Int, sqrt(sample_size)))
     yrange = range(lb[2], ub[2], length=ceil(Int, sqrt(sample_size)))
 
-    perturbations = [state[idxs] .+ [x, lb[2]] for x in xrange] # bottom
-    append!(perturbations, [state[idxs] .+ [x, ub[2]] for x in xrange]) # top
-    append!(perturbations, [state[idxs] .+ [lb[1], y] for y in yrange]) # left
-    append!(perturbations, [state[idxs] .+ [ub[1], y] for y in yrange]) # right
+    Lx = length(xrange)
+    Ly = length(yrange)
+
+    perturbations = zeros(2, 2Lx+2Ly)
+    for (ix, x) in enumerate(xrange)
+        perturbations[:, ix]= [x, lb[2]] # bottom
+        perturbations[:, Lx+ix]= [x, ub[2]] # top
+    end
+    for (iy, y) in enumerate(yrange)
+        perturbations[:, 2Lx+iy]= [lb[1], y] # left
+        perturbations[:, 2Lx+Ly+iy]= [ub[1], y] # right
+    end
 
     if verbose
         println("Rectangle of initial conditions.")
     end
 
-    return perturbations
+    return ICset(state, perturbations, idxs)
 end

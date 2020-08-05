@@ -7,6 +7,7 @@ include(folder * "/SampleStatistics.jl")
 export binomial_proportion, binomial_ci
 
 using QuasiMonteCarlo
+import Base: size, length, getindex # extend these functions
 include(folder * "/InitialConditionSets.jl")
 export perturbation_set,
     perturbation_set_uniform, perturbation_set_sobol, perturbation_set_grid, perturbation_set_rect
@@ -46,7 +47,9 @@ include(folder * "/Sampling.jl")
 export basin_stability_fixpoint
 export survivability
 
+using Plots: plot, scatter!, xlims!, ylims!, plot!
 include(folder * "/Plots.jl")
-export basin_plot
+export basin_plot_trajectories
+
 
 end #module

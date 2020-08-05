@@ -232,3 +232,4 @@ function survivability(
     return sample_statistics(surv)
 end
 
+# TODO common sampling
