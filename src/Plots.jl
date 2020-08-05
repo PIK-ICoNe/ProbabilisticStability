@@ -5,7 +5,7 @@ function basin_plot_trajectories(
     sample_size,
     lb,
     ub;
-    periodic_dim = 1,
+    periodic_dim = nothing,
     dimensions = :,
     distance = Euclidean(),
     threshold = 1E-4,
@@ -43,13 +43,13 @@ function basin_plot_trajectories(
         verbose = verbose,
         )
 
-   
+
     fig = plot()
     v1 = first(dimensions)
     v2 = last(dimensions)
 
     in_basin = first.(esol)
-    
+
     # draw out of basin
     for (in_basin, sol) in esol
         scatter!(
@@ -68,7 +68,7 @@ function basin_plot_trajectories(
 
     xlims!(lb[1], ub[1])
     ylims!(lb[2], ub[2])
-    
+
     return fig
 end
 
