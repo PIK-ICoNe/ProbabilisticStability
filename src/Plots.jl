@@ -44,11 +44,9 @@ function basin_plot_trajectories(
         )
 
 
-    fig = plot()
+    fig = plot(xlims=(lb[1], ub[1]), ylims=(lb[2], ub[2]))
     v1 = first(dimensions)
     v2 = last(dimensions)
-
-    in_basin = first.(esol)
 
     # draw out of basin
     for (in_basin, sol) in esol
@@ -66,9 +64,6 @@ function basin_plot_trajectories(
         )
     end
 
-    xlims!(lb[1], ub[1])
-    ylims!(lb[2], ub[2])
-
     return fig
 end
 
@@ -79,7 +74,7 @@ function angular_axis(periodic_dim, v1, v2)
         vars = ((x, y) -> (mod2pi(x + π) - π, y), v1, v2)
     elseif isa(periodic_dim, Colon)
         vars = ((x, y) -> (mod2pi(x + π) - π, mod2pi(y + π) - π), v1, v2)
-    else
+    elseif isnothing(periodic_dim)
         vars = (v1, v2)
     end
 end
