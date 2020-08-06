@@ -18,8 +18,19 @@ function eval_convergence_to_state(sol::AbstractODESolution, state, distance; ta
     return slope < 0
 end
 
+function get_final_distance_to_state(sol::AbstractODESolution, state, distance; threshold=1E-3, verbose=true)
+    return evaluate(distance, state, sol[end])
+end
+
 function eval_final_distance_to_state(sol::AbstractODESolution, state, distance; threshold=1E-3, verbose=true)
     d = evaluate(distance, state, sol[end])
+    if verbose
+        println("The final state distance is $d.")
+    end
+    return d < threshold
+end
+
+function eval_final_distance_to_state(d::Real; threshold=1E-3, verbose=true)
     if verbose
         println("The final state distance is $d.")
     end
@@ -68,7 +79,7 @@ eval_mean_distance_to_state(d; threshold=1E-3) = d < threshold
 
 function get_max_distances_to_state(sol::AbstractODESolution, state, distance; tail_frac=0.8)
     L = length(sol.t)
-    idx = max(1, round(Int, tail_frac*L)):L
+    #idx = max(1, round(Int, tail_frac*L)):L
     return maximum(distance.(fp, sol), dims=2)
 end
 

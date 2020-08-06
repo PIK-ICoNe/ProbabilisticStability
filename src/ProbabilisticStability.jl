@@ -11,6 +11,7 @@ import Base: size, length, getindex # extend these functions
 include(folder * "/InitialConditionSets.jl")
 export perturbation_set,
     perturbation_set_uniform, perturbation_set_sobol, perturbation_set_grid, perturbation_set_rect
+export ICset
 
 using Distributions: mean
 using Distances: euclidean, Euclidean, PeriodicEuclidean, colwise, evaluate
@@ -43,13 +44,16 @@ using OrdinaryDiffEq:
     EnsembleSerial,
     remake
 using Distributed: nprocs
+using DataFrames: DataFrame, rename!
 include(folder * "/Sampling.jl")
 export basin_stability_fixpoint
 export survivability
 
 using Plots: plot, scatter!, xlims!, ylims!, plot!
+using DataFrames: DataFrame
 include(folder * "/Plots.jl")
 export basin_plot_trajectories
+export basin_plot
 
 
 end #module

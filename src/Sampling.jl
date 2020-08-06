@@ -1,8 +1,3 @@
-
-function return_trajectories(sol, i) # output_func
-    (sol, false)
-end
-
 # ODEProblem, custom ICset
 function mc_sample_from_IC(
     ode_prob::ODEProblem,
@@ -14,6 +9,8 @@ function mc_sample_from_IC(
     parallel_alg = nothing,
     solver = nothing,
     verbose = false,
+    save_on = true,
+    save_idxs = :,
 )
     # TODO: pass solve args through
 
@@ -37,27 +34,18 @@ function mc_sample_from_IC(
         u_init = [],
     )
 
-    if verbose
-        @time esol = solve(
-            eprob,
-            option_s,
-            option_p,
-            # saveat = 0.1,
-            trajectories = sample_size,
-            callback = TerminateSteadyState(1E-8, 1E-6), #
-        )
-    else
-        esol = solve(
-            eprob,
-            option_s,
-            option_p,
-            # saveat = 0.1,
-            trajectories = sample_size,
-            callback = TerminateSteadyState(1E-8, 1E-6), # 1E-8, 1E-6
-        )
-    end
+    esol = solve(
+        eprob,
+        option_s,
+        option_p,
+        # saveat = 0.1,
+        trajectories = sample_size,
+        callback = TerminateSteadyState(1E-8, 1E-6), # 1E-8, 1E-6
+        save_on = save_on,
+        save_idxs = save_idxs,
+    )
 
-    return esol.u
+    return esol
 end
 
 
@@ -76,6 +64,7 @@ function basin_stability_fixpoint(
     solver = nothing,
     sample_alg = nothing,
     verbose = false,
+    return_df = false,
 )
 
     if isnothing(sample_alg)
@@ -92,14 +81,19 @@ function basin_stability_fixpoint(
             distance;
             verbose = false,
         )
-        di = eval_final_distance_to_state(
+        di = get_final_distance_to_state(
             sol,
             fixpoint,
             distance; # per dimension, use state_filter?
             threshold = threshold,
             verbose = false,
         )
-        ([co; di], false)
+        cl = eval_final_distance_to_state(
+            di;
+            threshold = threshold,
+            verbose = false,
+        )
+        ([cl; di; co], false)
     end
 
     # TODO: pass solve args through
@@ -115,14 +109,22 @@ function basin_stability_fixpoint(
         verbose = verbose,
         )
 
-    converged = first.(esol)
-    close = last.(esol)
+    results = DataFrame(
+        within_threshold = [p[1] == 1 for p in esol.u],
+        final_distance = [p[2] for p in esol.u],
+        convergence = [p[3] == 1 for p in esol.u],
+        perturbation = [ics.perturbations[:, i] for i in 1:sample_size],
+    )
 
     if verbose
-        println(count(close), " initial conditions arrived close to the fixpoint (threshold $threshold) ", count(converged), " indicate convergence.")
+        println(count(results.within_threshold .== 1), " initial conditions arrived close to the fixpoint (threshold $threshold) ", count(results.convergence .== 1), " indicate convergence.")
     end
 
-    return sample_statistics(close)
+    if return_df 
+        return sample_statistics(results.within_threshold), results 
+    else
+        return sample_statistics(results.within_threshold)
+    end
 end
 
 # DynamicalSystem
@@ -142,14 +144,14 @@ function basin_stability_fixpoint(
 )
     # TODO: pass solve args through
 
-    if verbose
-        println("Parallel integrator simulation")
-    end
-
     if isnothing(sample_alg)
         ics = perturbation_set_sobol(fixpoint, dimensions, sample_size, lb, ub; verbose = verbose)
     else
         ics = perturbation_set(fixpoint, dimensions, sample_size, lb, ub, sample_alg, verbose)
+    end
+
+    if verbose
+        println("Parallel integrator simulation")
     end
 
     option_s = isnothing(solver) ? Tsit5() : solver
@@ -203,10 +205,29 @@ function survivability(
     end
 
     function eval_func(sol, i) # output_func
-        inside_set = [indicator_func(p) for p in sol.u] # use interpolation?
-        surv = all(inside_set) # total survival
+        co = eval_convergence_to_state(
+            sol,
+            fixpoint,
+            distance;
+            verbose = false,
+        )
+        di = get_final_distance_to_state(
+            sol,
+            fixpoint,
+            distance; # per dimension, use state_filter?
+            threshold = threshold,
+            verbose = false,
+        )
+        cl = eval_final_distance_to_state(
+            di;
+            threshold = threshold,
+            verbose = false,
+        )
+        inside_set = [indicator_func(p) for p in sol.u] 
+        su = all(inside_set) # total survival
         finite_surv = findlast(cumprod(inside_set)) # finite time survival
-        ([surv; isnothing(finite_surv) ? nothing : sol.t[finite_surv]], false)
+        fs = isnothing(finite_surv) ? nothing : sol.t[finite_surv]
+        return ([su; fs; cl; di; co], false)
     end
 
     # TODO: pass solve args through

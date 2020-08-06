@@ -150,8 +150,8 @@ function perturbation_set_rect(
 )
     @assert length(lb) == length(ub) == length(idxs) == 2
 
-    xrange = range(lb[1], ub[1], length=ceil(Int, sqrt(sample_size)))
-    yrange = range(lb[2], ub[2], length=ceil(Int, sqrt(sample_size)))
+    xrange = range(lb[1], ub[1], length=ceil(Int, sample_size/4) )
+    yrange = range(lb[2], ub[2], length=ceil(Int, sample_size/4) )
 
     Lx = length(xrange)
     Ly = length(yrange)

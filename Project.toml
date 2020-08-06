@@ -4,6 +4,7 @@ authors = ["Paul Schultz <pschultz@pik-potsdam.de>"]
 version = "0.1.0"
 
 [deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
@@ -14,4 +15,4 @@ DynamicalSystems = "61744808-ddfa-5f27-97ff-6e42cc95d634"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 QuasiMonteCarlo = "8a4e6c94-4038-4cdc-81c3-7e6ffdb2a71b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
+VoronoiDelaunay = "72f80fcb-8c52-57d9-aff0-40c1a3526986"
