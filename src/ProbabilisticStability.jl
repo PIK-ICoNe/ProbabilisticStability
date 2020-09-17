@@ -7,6 +7,7 @@ include(folder * "/SampleStatistics.jl")
 export binomial_proportion, binomial_ci
 
 using QuasiMonteCarlo
+using StaticArrays
 import Base: size, length, getindex # extend these functions
 include(folder * "/InitialConditionSets.jl")
 export perturbation_set,

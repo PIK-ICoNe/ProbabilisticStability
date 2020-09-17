@@ -24,14 +24,14 @@ function mc_sample_from_IC(
         parallel_alg
 
     # (prob,i,repeat)->(prob)
-    prob_func(prob, i, repeat) = remake(prob, u0 = ics[:, i])
+    prob_func(prob, i, repeat) = remake(prob, u0 = ics[i]) #SVector{first(ics.outdim)}(ics[:, i]))
 
     eprob = EnsembleProblem(
         ode_prob;
         output_func = eval_func, # (sol,i) -> (sol,false),
         prob_func = prob_func, # (prob,i,repeat)->(prob),
         # reduction = (u,data,I)->(append!(u,data),false),
-        u_init = [],
+        # u_init = similar(SVector{first(ics.outdim)}(ics.state)),
     )
 
     esol = solve(

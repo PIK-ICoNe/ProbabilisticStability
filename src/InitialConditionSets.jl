@@ -46,23 +46,51 @@ struct ICset #{T, N}
     outdim#::Tuple
 end
 
-ICset(state, perturbations, idxs) = ICset(
-    state,
-    perturbations,
-    idxs,
-    (length(state), last(size(perturbations))),
-)
-
-
-Base.size(ics::ICset) = ics.outdim
-Base.length(ics::ICset) = prod(size(ics))
-function Base.getindex(ics::ICset, i, j)
-    out = zeros(ics.outdim)
-    out[ics.idxs, :] .+= ics.perturbations
-    out .+= ics.state
-    getindex(out, i, j)
+function ICset(state, perturbations, idxs)  
+    @assert length(idxs) == first(size(perturbations))
+    #sstate = SVector{length(state)}(state)
+    #sperturbations = SMatrix{size(perturbations)...}(perturbations)
+    return ICset(
+        state,
+        perturbations,
+        idxs,
+        (length(state), last(size(perturbations)))
+    )
 end
 
+##
+Base.size(ics::ICset) = ics.outdim
+Base.length(ics::ICset) = prod(size(ics))
+
+function Base.getindex(ics::ICset, i::Int)
+    out = zeros(eltype(ics.state), first(ics.outdim)) 
+    out .+= ics.state
+    patch = @view out[ics.idxs, :]
+    patch .+= ics.perturbations[:, i]
+    return out
+end
+
+Base.getindex(ics::ICset, i::Colon, j::Int) = Base.getindex(ics, j)
+
+function Base.getindex(ics::ICset, i::Union{Int, UnitRange}, j::Union{Int, UnitRange})
+    out = zeros(eltype(ics.state), first(ics.outdim), length(j)) 
+    out .+= ics.state
+    patch = @view out[ics.idxs, :]
+    patch .+= ics.perturbations[:, j]
+    return getindex(out, i, :) 
+end
+
+Base.getindex(ics::ICset, i::Colon, j::UnitRange) = Base.getindex(ics, 1:first(ics.outdim), j)
+Base.getindex(ics::ICset, j::UnitRange) = Base.getindex(ics, :, j)
+
+function Base.getindex(ics::ICset, i::Int, j::Colon)
+    out = zeros(eltype(ics.state), ics.outdim...) 
+    out .+= ics.state
+    patch = @view out[ics.idxs, :]
+    patch .+= ics.perturbations[:, j]
+    return getindex(out, i, :)
+end
+##
 
 perturbation_set_uniform(
     state,
