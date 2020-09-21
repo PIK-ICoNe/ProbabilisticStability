@@ -19,7 +19,6 @@ VoronoiDelaunay = "72f80fcb-8c52-57d9-aff0-40c1a3526986"
 
 [compat]
 DataFrames = "0.21"
-DifferentialEquations = "6.15"
 DiffEqBase = "6.47"
 DiffEqCallbacks = "2.14"
 Distances = "0.9"
