@@ -18,7 +18,14 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 VoronoiDelaunay = "72f80fcb-8c52-57d9-aff0-40c1a3526986"
 
 [compat]
+DataFrames = "0.21"
+DifferentialEquations = "6.15"
+DiffEqBase = "6.47"
+DiffEqCallbacks = "2.14"
+Distances = "0.9"
 DynamicalSystems = "1.5"
 OrdinaryDiffEq = "5.42"
 Distributions = "0.23"
+VoronoiDelaunay = "0.4"
+QuasiMonteCarlo = "0.2"
 
