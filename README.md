@@ -1,5 +1,5 @@
 # ProbabilisticStability
-An implementation of differnet probabilistic stability measures for deterministic systems.
+An implementation of different probabilistic stability measures for deterministic systems.
 
 The aim is to combine features from different Julia packages to implement stability analysis
 methods developed in recent papaers, e.g. from PIK.
@@ -9,6 +9,8 @@ methods developed in recent papaers, e.g. from PIK.
 - MCBB.jl/Clustering.jl for Monte-Carlo sampling and trajectory clustering
 - QuasiMonteCarlo.jl to generate low-discrepancy sequences
 - DifferentialEquations.jl for numerical integration (underlying most above-mentioned packages)
+
+The package is tested on Julia >= v1.5
 
 As a start, first implementations are included in the `examples` folder.
 
