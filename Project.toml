@@ -20,9 +20,9 @@ VoronoiDelaunay = "72f80fcb-8c52-57d9-aff0-40c1a3526986"
 [compat]
 DataFrames = "0.21"
 DiffEqCallbacks = "2.14"
+DifferentialEquations = "6.15"
 Distances = "0.9"
-DynamicalSystems = "1"
 Distributions = "0.23"
-VoronoiDelaunay = "0.4"
+DynamicalSystems = "1"
 QuasiMonteCarlo = "0.2"
-
+VoronoiDelaunay = "0.4"
