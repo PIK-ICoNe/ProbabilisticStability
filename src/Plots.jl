@@ -1,4 +1,3 @@
-
 function angular_axis(periodic_dim, v1, v2; verbose = false)
     if periodic_dim == 1
         if verbose
