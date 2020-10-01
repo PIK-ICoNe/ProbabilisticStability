@@ -1,3 +1,6 @@
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://luap-pik.github.io/ProbabilisticStability/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://luap-pik.github.io/ProbabilisticStability/dev)
+
 # ProbabilisticStability
 An implementation of different probabilistic stability measures for deterministic systems.
 
