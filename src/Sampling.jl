@@ -182,6 +182,98 @@ function basin_stability_fixpoint(
     return sample_statistics(close)
 end
 
+# PowerGrid
+function basin_stability_fixpoint(
+    pg::PowerGrid,
+    fixpoint,
+    sample_size,
+    lb,
+    ub;
+    node = 2,
+    symbols = [:u_r, :u_i],
+    tspan = (0., 1000.),
+    distance = Euclidean(),
+    threshold = 1E-4,
+    parallel_alg = nothing,
+    solver = nothing,
+    sample_alg = nothing,
+    verbose = false,
+    return_df = false,
+)
+
+    # calculate indices from node and symbol
+    valid_symbols = pg.nodes[node] |> symbolsof
+    @assert all([ s ∈ valid_symbols for s in symbols])
+
+    offset = node == 1 ? 0. : dimension.(pg.nodes[1:node]) |> sum
+    dimensions = Int.( offset .+ [ findfirst(s .== valid_symbols) for s in symbols] )
+
+    if isnothing(sample_alg)
+        ics = perturbation_set_sobol(fixpoint, dimensions, sample_size, lb, ub; verbose = verbose)
+    else
+        ics = perturbation_set(fixpoint, dimensions, sample_size, lb, ub, sample_alg, verbose)
+    end
+
+    if verbose
+        println("Perturbing variables $symbols @ node $node : dimensions $dimensions")
+    end
+
+    # (sol,i) -> (sol,false)
+    function eval_func(sol, i) # output_func
+        co = eval_convergence_to_state(
+            sol,
+            fixpoint,
+            distance;
+            verbose = false,
+        )
+        di = get_final_distance_to_state(
+            sol,
+            fixpoint,
+            distance; # per dimension, use state_filter?
+            threshold = threshold,
+            verbose = false,
+        )
+        cl = eval_final_distance_to_state(
+            di;
+            threshold = threshold,
+            verbose = false,
+        )
+        ([cl; di; co], false)
+    end
+
+    ode_prob = ODEProblem(rhs(pg), fixpoint, tspan)
+
+    # TODO: pass solve args through
+    esol = mc_sample_from_IC(
+        ode_prob,
+        eval_func,
+        sample_size,
+        ics;
+        distance = distance,
+        threshold = threshold,
+        parallel_alg = parallel_alg,
+        solver = solver,
+        verbose = verbose,
+        )
+
+    results = DataFrame(
+        within_threshold = [p[1] == 1 for p in esol.u],
+        final_distance = [p[2] for p in esol.u],
+        convergence = [p[3] == 1 for p in esol.u],
+        perturbation = [ics.perturbations[:, i] for i in 1:sample_size],
+    )
+
+    if verbose
+        println(count(results.within_threshold .== 1), " initial conditions arrived close to the fixpoint (threshold $threshold) ", count(results.convergence .== 1), " indicate convergence.")
+    end
+
+    if return_df 
+        return sample_statistics(results.within_threshold), results 
+    else
+        return sample_statistics(results.within_threshold)
+    end
+end
+
 
 ## ODEProblem
 function survivability(
