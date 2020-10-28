@@ -119,12 +119,12 @@ function basin_plot(
     c = [ v ? :orange : :blue for v in df.within_threshold]
 
     if periodic_dim == 1
-        x .= mod2pi(x + π) - π
+        @. x = mod2pi(x + π) - π
     elseif periodic_dim == 2
-        y .= mod2pi(y + π) - π
+        @. y = mod2pi(y + π) - π
     elseif isa(periodic_dim, Colon)
-        x .= mod2pi(x + π) - π
-        y .= mod2pi(y + π) - π
+        @. x = mod2pi(x + π) - π
+        @. y = mod2pi(y + π) - π
     end
 
     fig = plot()
@@ -141,6 +141,43 @@ function basin_plot(
 
     xlims!(fpx + lb[1], fpx + ub[1])
     ylims!(fpy + lb[2],  fpy + ub[2])
+
+    return fig
+end
+
+function basin_plot(
+    op::State,
+    df::DataFrame,
+    perturbations,
+    lb,
+    ub;
+    plotfunc = scatter!,
+    periodic_dim = nothing,
+    node = 1,
+    syms = [:φ, :v],
+    verbose = false,
+    plot_kwargs...
+    )
+
+    x = perturbations[1, :]
+    y = perturbations[2, :]
+
+    c = [ v ? :orange : :blue for v in df.within_threshold]
+
+    fig = plot()
+    plotfunc(
+        fig,
+        x, y, c=c, 
+        shape = :rect,
+        legend = false,
+        ms = 1,
+        grid = false,
+        markerstrokewidth = 0;
+        plot_kwargs...
+        )
+
+    #xlims!(fpx + lb[1], fpx + ub[1])
+    #ylims!(fpy + lb[2],  fpy + ub[2])
 
     return fig
 end

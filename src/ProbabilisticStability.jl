@@ -53,6 +53,7 @@ export survivability
 
 using Plots: plot, scatter!, xlims!, ylims!, plot!
 using DataFrames: DataFrame
+using PowerDynamics: State
 include(folder * "/Plots.jl")
 export basin_plot_trajectories
 export basin_plot

@@ -93,7 +93,7 @@ function basin_stability_fixpoint(
             threshold = threshold,
             verbose = false,
         )
-        ([cl; di; co], false)
+        ([cl; di; co; sol.retcode], false)
     end
 
     # TODO: pass solve args through
@@ -114,6 +114,7 @@ function basin_stability_fixpoint(
         final_distance = [p[2] for p in esol.u],
         convergence = [p[3] == 1 for p in esol.u],
         perturbation = [ics.perturbations[:, i] for i in 1:sample_size],
+        retcode = [p[4] for p in esol.u],
     )
 
     if verbose
@@ -186,38 +187,16 @@ end
 function basin_stability_fixpoint(
     pg::PowerGrid,
     fixpoint,
-    sample_size,
-    lb,
-    ub;
-    node = 2,
-    symbols = [:u_r, :u_i],
-    tspan = (0., 1000.),
+    ics;
     distance = Euclidean(),
     threshold = 1E-4,
     parallel_alg = nothing,
     solver = nothing,
-    sample_alg = nothing,
     verbose = false,
     return_df = false,
 )
-
-    # calculate indices from node and symbol
-    valid_symbols = pg.nodes[node] |> symbolsof
-    @assert all([ s ∈ valid_symbols for s in symbols])
-
-    offset = node == 1 ? 0. : dimension.(pg.nodes[1:node-1]) |> sum
-    dimensions = Int.( offset .+ [ findfirst(s .== valid_symbols) for s in symbols] )
-
-    if verbose
-        println("Perturbing variables $symbols @ node $node : dimensions $dimensions")
-    end
-
-    if isnothing(sample_alg)
-        ics = perturbation_set_sobol(fixpoint, dimensions, sample_size, lb, ub; verbose = verbose)
-    else
-        ics = perturbation_set(fixpoint, dimensions, sample_size, lb, ub, sample_alg, verbose)
-    end
-
+    sample_size = last(size(ics))
+    
     # (sol,i) -> (sol,false)
     function eval_func(sol, i) # output_func
         co = eval_convergence_to_state(
@@ -238,10 +217,10 @@ function basin_stability_fixpoint(
             threshold = threshold,
             verbose = false,
         )
-        ([cl; di; co], false)
+        ([cl; di; co; sol.retcode], false)
     end
 
-    ode_prob = ODEProblem(rhs(pg), fixpoint, tspan)
+    ode_prob = ODEProblem(rhs(pg), fixpoint, (0., 1000.))
 
     # TODO: pass solve args through
     esol = mc_sample_from_IC(
@@ -261,6 +240,7 @@ function basin_stability_fixpoint(
         final_distance = [p[2] for p in esol.u],
         convergence = [p[3] == 1 for p in esol.u],
         perturbation = [ics.perturbations[:, i] for i in 1:sample_size],
+        retcode = [p[4] for p in esol.u],
     )
 
     if verbose
@@ -273,7 +253,6 @@ function basin_stability_fixpoint(
         return sample_statistics(results.within_threshold)
     end
 end
-
 
 ## ODEProblem
 function survivability(

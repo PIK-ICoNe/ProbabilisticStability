@@ -2,7 +2,7 @@ function get_convergence_to_state(sol::AbstractODESolution, state, distance; tai
     L = length(sol.t)
     idx = max(1, round(Int, tail_frac*L)):L
     x = sol.t[idx]
-    y = [evaluate(distance, state, p) for p in sol.u[idx]]
+    y = [distance(state, p) for p in sol.u[idx]]
     X = zeros(length(x),2)
     X[:,1] = x
     X[:,2] .= 1.0
@@ -19,11 +19,11 @@ function eval_convergence_to_state(sol::AbstractODESolution, state, distance; ta
 end
 
 function get_final_distance_to_state(sol::AbstractODESolution, state, distance; threshold=1E-3, verbose=true)
-    return evaluate(distance, state, sol[end])
+    return distance(state, sol[end])
 end
 
 function eval_final_distance_to_state(sol::AbstractODESolution, state, distance; threshold=1E-3, verbose=true)
-    d = evaluate(distance, state, sol[end])
+    d = distance(state, sol[end])
     if verbose
         println("The final state distance is $d.")
     end
