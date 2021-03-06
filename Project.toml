@@ -22,3 +22,6 @@ QuasiMonteCarlo = "8a4e6c94-4038-4cdc-81c3-7e6ffdb2a71b"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 VoronoiDelaunay = "72f80fcb-8c52-57d9-aff0-40c1a3526986"
+
+[compat]
+Quadrature = "1.8"
