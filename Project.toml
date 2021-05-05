@@ -24,4 +24,5 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 VoronoiDelaunay = "72f80fcb-8c52-57d9-aff0-40c1a3526986"
 
 [compat]
+DataFrames = "1.1"
 DiffEqBase = "6.60"
