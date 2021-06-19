@@ -25,3 +25,4 @@ VoronoiDelaunay = "72f80fcb-8c52-57d9-aff0-40c1a3526986"
 
 [compat]
 DiffEqBase = "6.60"
+OrdinaryDiffEq = "5.58"
